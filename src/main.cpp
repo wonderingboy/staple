@@ -14,7 +14,9 @@ Rect location;
 int cols;
 int rows;
 Rect selectl;
-void onMouse(int event,int x,int y,int,void*)
+bool mouse_down=false;
+Mat image;
+void onMouse(int event,int x,int y,int flags,void*)
 {
     if(event==CV_EVENT_LBUTTONDOWN&&false==init)
     {
@@ -22,6 +24,7 @@ void onMouse(int event,int x,int y,int,void*)
         selectl.y=y;
         cout<<x<<endl;
         cout<<y<<endl;
+		mouse_down=true;
     }
     else if(event==CV_EVENT_LBUTTONUP&&false==init)
     {
@@ -33,7 +36,18 @@ void onMouse(int event,int x,int y,int,void*)
 		}else{
 			cout<<"fail to  initialize location"<<endl;
 		}
-    }
+		mouse_down=false;
+    } else if(event==CV_EVENT_MOUSEMOVE&&true==mouse_down&&false==init){
+		int lx=selectl.x<x?selectl.x:x;
+		int rx=selectl.x>x?selectl.x:x;
+		int uy=selectl.y<y?selectl.y:y;
+		int dy=selectl.y>y?selectl.y:y;
+		Mat tempo;
+		image.copyTo(tempo);
+		cv::rectangle(tempo, Rect(lx,uy,rx-lx,dy-uy), cv::Scalar(0, 0, 255), 2);
+		imshow("STAPLE",tempo);
+		waitKey(1);		
+	} 
 }
 int main(int argc, char * argv[])
 {
@@ -43,7 +57,6 @@ int main(int argc, char * argv[])
 	 }
 	cout<<argv[1]<<endl; 
 	STAPLE_TRACKER staple;
-    cv::Mat image;
     bool show_visualization = true;
 	namedWindow("STAPLE");
 	setMouseCallback("STAPLE",onMouse,0);
@@ -61,8 +74,8 @@ int main(int argc, char * argv[])
 		if(false==init){
 			cout<<"please choose rect to initialize"<<endl;
 			cv::imshow("STAPLE", image);
-			while(false==init){
-            cv::waitKey(1);
+			while(false==init) { 
+	            cv::waitKey(1);
             }
             cv::rectangle(image, location, cv::Scalar(0, 0, 255), 2);
 			cv::imshow("STAPLE", image);
@@ -77,9 +90,10 @@ int main(int argc, char * argv[])
             cv::imshow("STAPLE", image);
             char key = cv::waitKey(10);
             if (key == 27 || key == 'q' || key == 'Q')
-                break;
+                return 0;
 			if (key=='r'||key=='R') {
 				init=false;
+				mouse_down=false;
 			}
         }
 	}
